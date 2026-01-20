@@ -1,0 +1,14 @@
+# PlatformIO
+.pio/
+.vscode/
+
+# Local config / secrets
+src/config_local.h
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.elf
+*.bin
