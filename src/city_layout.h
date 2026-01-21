@@ -1,30 +1,19 @@
 #pragma once
 
 #include <Arduino.h>
+#include <stdint.h>
 #include "building_defs.h"
 
-/*************************
- * INIT / UPDATE
- *************************/
-void initCityLayout();
+/************************************************************
+ * CITY LAYOUT
+ ************************************************************/
 
-/*************************
- * LAYOUT SETTERS
- *************************/
-bool setCityLayoutFromJson(const String& json);
-
-/*************************
- * QUERY HELPERS
- *************************/
-uint16_t getCityLedCount();
-uint8_t  getBuildingInstanceCount();
-
-/*************************
- * ITERATION
- *************************/
 struct BuildingInstance {
   const BuildingDef* def;
-  uint16_t baseOffset;   // absolute LED offset in global array
+  uint16_t led_offset;
 };
 
-const BuildingInstance* getBuildingInstance(uint8_t index);
+bool setCityLayoutFromJson(const String& json);
+uint16_t getTotalLedCount();
+uint16_t getBuildingInstanceCount();
+const BuildingInstance* getBuildingInstance(uint16_t index);
