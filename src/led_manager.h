@@ -1,22 +1,6 @@
 #pragma once
 
-#include <Arduino.h>
-#include <FastLED.h>
+#include <stdint.h>
 
-/*************************
- * INIT / RENDER
- *************************/
-void initLEDs();
-void renderLEDs();
-
-/*************************
- * GLOBAL CONTROLS
- *************************/
-void setGlobalBrightness(uint8_t brightness);
-void setPowerState(bool on);
-
-/*************************
- * LED ACCESS
- *************************/
-CRGB* getLEDArray();
-uint16_t getLEDCount();
+void initLedManager(uint16_t total_leds);
+void renderCity();

@@ -1,20 +1,17 @@
 #include "building_defs.h"
 
-/*************************
- * MOVIE THEATER
- *************************/
-
-static const ZoneDef MOVIE_THEATER_ZONES[] = {
-  { "streetlamp", 3, ZONE_EXTERIOR | ZONE_AMBIENT | ZONE_SEASONAL },
-  { "interior",   6, ZONE_AMBIENT },
-  { "projector",  4, ZONE_FEATURE },
-  { "marquee",    6, ZONE_FEATURE | ZONE_SEASONAL }
+static const LedDef MOVIE_THEATER_LEDS[] = {
+  { ZONE_STREET, ZF_EXTERIOR },
+  { ZONE_STREET, ZF_EXTERIOR },
+  { ZONE_INTERIOR, ZF_SEASONAL },
+  { ZONE_PROJECTOR, ZF_AMBIENT | ZF_FEATURE },
+  { ZONE_INTERIOR, ZF_NONE },
+  { ZONE_SIGNAGE, ZF_EXTERIOR },
+  { ZONE_SIGNAGE, ZF_EXTERIOR },
 };
 
-const BuildingDef BUILDING_MOVIE_THEATER_DEF = {
-  BUILDING_MOVIE_THEATER,
-  "movie_theater",
-  LED_COUNT(MOVIE_THEATER_ZONES),
-  MOVIE_THEATER_ZONES,
-  ZONE_COUNT(MOVIE_THEATER_ZONES)
+const BuildingDef MOVIE_THEATER_DEF = {
+  "MOVIE_THEATER",
+  7,
+  MOVIE_THEATER_LEDS
 };

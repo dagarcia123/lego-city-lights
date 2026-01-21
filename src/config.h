@@ -29,17 +29,15 @@
 
 #define MQTT_TOPIC_BASE "lego_city"
 
-// --------------------------------------------------
-// LED CONFIG
-// --------------------------------------------------
-
+/*************************
+ * LED CONFIG
+ *************************/
 #define LED_PIN        5
 #define LED_TYPE       WS2812B
 #define LED_COLOR_ORDER GRB
 #define LED_BRIGHTNESS 128
 
 #define MAX_LEDS      500      // hard safety cap
-
 
 /*************************
  * TIMING

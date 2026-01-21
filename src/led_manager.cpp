@@ -1,74 +1,83 @@
 #include "led_manager.h"
+
+#include <FastLED.h>
+
 #include "config.h"
+#include "city_layout.h"
+#include "building_defs.h"
 
-#ifdef DEBUG_SERIAL
-#include <Arduino.h>
-#endif
+// ----------------------------------------------------------
+// INTERNAL STATE
+// ----------------------------------------------------------
 
-// -----------------------------
-// Internal state
-// -----------------------------
-static CRGB leds[MAX_LEDS];
-static uint16_t ledCount = MAX_LEDS;   // will later be set dynamically
-static uint8_t globalBrightness = DEFAULT_BRIGHTNESS;
-static bool powerOn = true;
+static CRGB* leds = nullptr;
+static uint16_t ledCount = 0;
 
-// -----------------------------
-// Init
-// -----------------------------
-void initLEDs() {
-  FastLED.addLeds<LED_TYPE, LED_DATA_PIN, LED_COLOR>(leds, ledCount);
-  FastLED.setBrightness(globalBrightness);
-  FastLED.clear(true);
+// ----------------------------------------------------------
+// INITIALIZATION
+// ----------------------------------------------------------
 
-#ifdef DEBUG_SERIAL
-  Serial.print("LED system initialized, max LEDs: ");
-  Serial.println(ledCount);
-#endif
-}
+void initLedManager(uint16_t total_leds) {
+  ledCount = total_leds;
 
-// -----------------------------
-// Render
-// -----------------------------
-void renderLEDs() {
-  if (!powerOn) {
-    FastLED.clear(false);
-    FastLED.show();
-    return;
+  if (leds) {
+    delete[] leds;
   }
 
-  FastLED.setBrightness(globalBrightness);
+  leds = new CRGB[ledCount];
+
+  FastLED.addLeds<LED_TYPE, LED_PIN, LED_COLOR_ORDER>(leds, ledCount);
+  FastLED.setBrightness(LED_BRIGHTNESS);
+
+  FastLED.clear();
   FastLED.show();
 }
 
-// -----------------------------
-// Global controls
-// -----------------------------
-void setGlobalBrightness(uint8_t brightness) {
-  globalBrightness = brightness;
+// ----------------------------------------------------------
+// COLOR SELECTION (TEMPORARY / DEBUG)
+// ----------------------------------------------------------
 
-#ifdef DEBUG_SERIAL
-  Serial.print("Brightness set to ");
-  Serial.println(brightness);
-#endif
+static CRGB colorForZone(ZoneType zone) {
+  switch (zone) {
+    case ZONE_STREET:
+      return CRGB(255, 200, 150);   // warm white
+    case ZONE_INTERIOR:
+      return CRGB(255, 180, 110);   // interior warm
+    case ZONE_SIGNAGE:
+      return CRGB::Red;             // signage
+    case ZONE_PROJECTOR:
+      return CRGB::Blue;            // projector
+    default:
+      return CRGB::Black;
+  }
 }
 
-void setPowerState(bool on) {
-  powerOn = on;
+// ----------------------------------------------------------
+// RENDER LOOP
+// ----------------------------------------------------------
 
-#ifdef DEBUG_SERIAL
-  Serial.print("Power state: ");
-  Serial.println(on ? "ON" : "OFF");
-#endif
-}
+void renderCity() {
+  if (!leds || ledCount == 0) {
+    return;
+  }
 
-// -----------------------------
-// LED access
-// -----------------------------
-CRGB* getLEDArray() {
-  return leds;
-}
+  uint16_t buildingCount = getBuildingInstanceCount();
 
-uint16_t getLEDCount() {
-  return ledCount;
+  for (uint16_t b = 0; b < buildingCount; b++) {
+    const BuildingInstance* inst = getBuildingInstance(b);
+    const BuildingDef* def = inst->def;
+
+    for (uint16_t i = 0; i < def->led_count; i++) {
+      uint16_t globalIndex = inst->led_offset + i;
+
+      if (globalIndex >= ledCount) {
+        continue;
+      }
+
+      const LedDef& led = def->leds[i];
+      leds[globalIndex] = colorForZone(led.zone);
+    }
+  }
+
+  FastLED.show();
 }
