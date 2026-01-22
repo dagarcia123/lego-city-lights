@@ -8,35 +8,28 @@
 /*************************
  * OTA CONFIG
  *************************/
-#define OTA_HOSTNAME "lego-city-esp"
-#define OTA_PASSWORD "letmein"   // optional but recommended
+#define OTA_HOSTNAME "OTA_HOSTNAME"
+#define OTA_PASSWORD "OTA_PASSWORD"   // optional but recommended
+
 
 /*************************
  * WIFI CONFIG
  *************************/
-#define WIFI_SSID     "Luke"
-#define WIFI_PASSWORD "elenasabrina"
+#define WIFI_SSID     "WIFI_SSID"
+#define WIFI_PASSWORD "WIFI_PASSWORD"
 
 /*************************
  * MQTT CONFIG
  *************************/
-#define MQTT_HOST       "192.168.4.150"
+#define MQTT_BROKER     "MQTT_IP"
 #define MQTT_PORT       1883
 #define MQTT_CLIENT_ID  DEVICE_NAME
-#define MQTT_USERNAME   "mqtt-user"
-#define MQTT_PASSWORD   "letmein"
+#define MQTT_USER     "MQTT_USER"
+#define MQTT_PASSWORD "MQTT_PASSWORD"
 
 #define MQTT_TOPIC_BASE "lego_city"
 
-/*************************
- * LED CONFIG
- *************************/
-#define LED_PIN         5
-#define LED_TYPE        WS2812B
-#define LED_COLOR_ORDER GRB
-#define LED_BRIGHTNESS  128
-
-#define MAX_LEDS        500      // hard safety cap
+#include "config_local.h"
 
 /*************************
  * TIMING
@@ -46,7 +39,6 @@
 /*************************
  * DEBUG FLAGS
  *************************/
-// #define DEBUG_SERIAL
 // #define DEBUG_MQTT
 // #define DEBUG_LAYOUT
 // #define DEBUG_LED

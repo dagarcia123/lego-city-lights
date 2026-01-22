@@ -10,7 +10,7 @@ static const LedDef MOVIE_THEATER_LEDS[] = {
   { ZONE_SIGNAGE, ZF_EXTERIOR },
 };
 
-const BuildingDef MOVIE_THEATER_DEF = {
+extern const BuildingDef MOVIE_THEATER_DEF = {
   "MOVIE_THEATER",
   7,
   MOVIE_THEATER_LEDS

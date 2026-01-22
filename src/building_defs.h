@@ -4,7 +4,6 @@
 
 /************************************************************
  * ZONE TYPES
- * Physical / logical classification of LEDs
  ************************************************************/
 enum ZoneType : uint8_t {
   ZONE_STREET,
@@ -14,8 +13,7 @@ enum ZoneType : uint8_t {
 };
 
 /************************************************************
- * ZONE / LED FLAGS
- * Behavioral traits (bitmask)
+ * ZONE FLAGS (BITMASK)
  ************************************************************/
 enum ZoneFlags : uint8_t {
   ZF_NONE      = 0,
@@ -27,7 +25,6 @@ enum ZoneFlags : uint8_t {
 
 /************************************************************
  * PER-LED DEFINITION
- * One entry per physical LED, order matters
  ************************************************************/
 struct LedDef {
   ZoneType zone;
@@ -38,7 +35,7 @@ struct LedDef {
  * BUILDING DEFINITION
  ************************************************************/
 struct BuildingDef {
-  const char* id;          // e.g. "MOVIE_THEATER"
-  uint16_t led_count;      // number of LEDs in this building
-  const LedDef* leds;      // pointer to per-LED definitions
+  const char* id;
+  uint16_t led_count;
+  const LedDef* leds;
 };

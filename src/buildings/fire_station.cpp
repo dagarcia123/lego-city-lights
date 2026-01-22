@@ -10,7 +10,7 @@ static const LedDef FIRE_STATION_LEDS[] = {
   { ZONE_INTERIOR, ZF_SEASONAL },
 };
 
-const BuildingDef FIRE_STATION_DEF = {
+extern const BuildingDef FIRE_STATION_DEF = {
   "FIRE_STATION",
   7,
   FIRE_STATION_LEDS

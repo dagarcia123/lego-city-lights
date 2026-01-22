@@ -1,12 +1,11 @@
 #pragma once
 
-#include <Arduino.h>
+#include <stdint.h>
 
-/******************************************************************************
- * MQTT LIFECYCLE
- *****************************************************************************/
+// --------------------------------------------------
+// MQTT LIFECYCLE
+// --------------------------------------------------
+
 void initMQTT();
 void mqttLoop();
-
-// Publish helpers
-void mqttPublish(const char* topic, const char* payload);
+bool mqttIsConnected();

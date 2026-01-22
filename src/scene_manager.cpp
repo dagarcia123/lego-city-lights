@@ -1,8 +1,6 @@
 #include "scene_manager.h"
 
-#ifdef DEBUG_SERIAL
 #include <Arduino.h>
-#endif
 
 // -----------------------------
 // Internal state

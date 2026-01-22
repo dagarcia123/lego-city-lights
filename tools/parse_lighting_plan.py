@@ -8,7 +8,9 @@ import pandas as pd
 
 EXCEL_FILE = "Building_Data_Model.xlsx"
 SHEET_NAME = "LightingPlan"
-OUTPUT_DIR = "src/buildings"
+
+BUILDINGS_DIR = "src/buildings"
+REGISTRY_FILE = "src/building_registry.generated.cpp"
 
 ALLOWED_ZONES = {"street", "interior", "signage", "projector"}
 
@@ -48,7 +50,6 @@ def fail(msg):
     print(f"\n❌ ERROR: {msg}")
     sys.exit(1)
 
-
 def normalize_bool(val):
     if pd.isna(val):
         return False
@@ -56,28 +57,25 @@ def normalize_bool(val):
         return val
     return str(val).strip().lower() in ("true", "1", "yes", "y")
 
-
 def snake(name):
     return name.lower()
 
-
 # ============================================================
-# CODE GENERATION
+# BUILDING GENERATION
 # ============================================================
 
 def generate_building_cpp(building_id, group):
     basename = snake(building_id)
-    cpp_path = os.path.join(OUTPUT_DIR, f"{basename}.cpp")
+    cpp_path = os.path.join(BUILDINGS_DIR, f"{basename}.cpp")
 
     leds = []
 
     for _, row in group.iterrows():
         zone = ZONE_ENUM[row["Zone"]]
 
-        flags = []
-        for col, flag in FLAG_ENUM.items():
-            if row[col]:
-                flags.append(flag)
+        flags = [
+            flag for col, flag in FLAG_ENUM.items() if row[col]
+        ]
 
         flag_expr = " | ".join(flags) if flags else "ZF_NONE"
         leds.append((zone, flag_expr))
@@ -93,7 +91,7 @@ static const LedDef {building_id}_LEDS[] = {{
 {os.linesep.join(led_lines)}
 }};
 
-const BuildingDef {building_id}_DEF = {{
+extern const BuildingDef {building_id}_DEF = {{
   "{building_id}",
   {len(leds)},
   {building_id}_LEDS
@@ -103,8 +101,65 @@ const BuildingDef {building_id}_DEF = {{
     with open(cpp_path, "w", encoding="utf-8") as f:
         f.write(cpp)
 
-    print(f"  📝 Generated {basename}.cpp")
+    print(f"  🏗️  Generated {basename}.cpp")
 
+# ============================================================
+# REGISTRY GENERATION
+# ============================================================
+
+def generate_registry(building_ids):
+    externs = [
+        f"extern const BuildingDef {bid}_DEF;"
+        for bid in building_ids
+    ]
+
+    entries = [
+        f"  &{bid}_DEF,"
+        for bid in building_ids
+    ]
+
+    cpp = f"""#include "building_registry.h"
+#include <cstring>
+
+// ----------------------------------------------------------
+// GENERATED FILE — DO NOT EDIT
+// Source: Building_Data_Model.xlsx
+// ----------------------------------------------------------
+
+{os.linesep.join(externs)}
+
+static const BuildingDef* ALL_BUILDINGS[] = {{
+{os.linesep.join(entries)}
+}};
+
+static const uint16_t BUILDING_COUNT =
+  sizeof(ALL_BUILDINGS) / sizeof(ALL_BUILDINGS[0]);
+
+const BuildingDef* getBuildingDefById(const char* id) {{
+  if (!id) return nullptr;
+
+  for (uint16_t i = 0; i < BUILDING_COUNT; i++) {{
+    if (strcmp(ALL_BUILDINGS[i]->id, id) == 0) {{
+      return ALL_BUILDINGS[i];
+    }}
+  }}
+  return nullptr;
+}}
+
+uint16_t getBuildingCount() {{
+  return BUILDING_COUNT;
+}}
+
+const BuildingDef* getBuildingByIndex(uint16_t index) {{
+  if (index >= BUILDING_COUNT) return nullptr;
+  return ALL_BUILDINGS[index];
+}}
+"""
+
+    with open(REGISTRY_FILE, "w", encoding="utf-8") as f:
+        f.write(cpp)
+
+    print(f"\n📦 Generated building_registry.generated.cpp")
 
 # ============================================================
 # MAIN
@@ -123,22 +178,20 @@ def main():
         if col not in df.columns:
             fail(f"Missing required column: {col}")
 
-    # Normalize booleans
     for col in FLAG_COLUMNS:
         df[col] = df[col].apply(normalize_bool)
 
     if not pd.api.types.is_numeric_dtype(df["LEDIndex"]):
-        fail("LEDIndex column must be numeric")
+        fail("LEDIndex must be numeric")
 
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(BUILDINGS_DIR, exist_ok=True)
 
     buildings = df.groupby("BuildingID")
+    building_ids = []
 
     print(f"\n🏙️  Generating {len(buildings)} building(s)\n")
 
     for building_id, group in buildings:
-        print(f"🏠 {building_id}")
-
         group = group.sort_values("LEDIndex")
         indices = group["LEDIndex"].astype(int).tolist()
 
@@ -153,9 +206,13 @@ def main():
                 fail(f"{building_id}: Unknown zone '{z}'")
 
         generate_building_cpp(building_id, group)
+        building_ids.append(building_id)
 
-    print("\n✅ Building code generation complete")
+    generate_registry(building_ids)
 
+    print("\n✅ Code generation complete")
+
+# ============================================================
 
 if __name__ == "__main__":
     main()

@@ -8,7 +8,7 @@ static const LedDef FRENCH_BISTRO_LEDS[] = {
   { ZONE_SIGNAGE, ZF_EXTERIOR },
 };
 
-const BuildingDef FRENCH_BISTRO_DEF = {
+extern const BuildingDef FRENCH_BISTRO_DEF = {
   "FRENCH_BISTRO",
   5,
   FRENCH_BISTRO_LEDS

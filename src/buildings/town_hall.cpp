@@ -11,7 +11,7 @@ static const LedDef TOWN_HALL_LEDS[] = {
   { ZONE_SIGNAGE, ZF_EXTERIOR | ZF_FEATURE },
 };
 
-const BuildingDef TOWN_HALL_DEF = {
+extern const BuildingDef TOWN_HALL_DEF = {
   "TOWN_HALL",
   8,
   TOWN_HALL_LEDS

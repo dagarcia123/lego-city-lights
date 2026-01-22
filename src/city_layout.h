@@ -4,10 +4,6 @@
 #include <stdint.h>
 #include "building_defs.h"
 
-/************************************************************
- * CITY LAYOUT
- ************************************************************/
-
 struct BuildingInstance {
   const BuildingDef* def;
   uint16_t led_offset;

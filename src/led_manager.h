@@ -4,3 +4,6 @@
 
 void initLedManager(uint16_t total_leds);
 void renderCity();
+
+// TEST MODE
+void enableTestPattern(bool enable);

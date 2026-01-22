@@ -1,100 +1,105 @@
 #include "mqtt.h"
-#include "config.h"
-#include "wifi_manager.h"
 
+#include <Arduino.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include <cstring>
 
-#ifdef DEBUG_SERIAL
-#include <Arduino.h>
-#endif
+#include "config.h"
+#include "led_manager.h"
+
+// --------------------------------------------------
+// MQTT CLIENT
+// --------------------------------------------------
 
 static WiFiClient wifiClient;
 static PubSubClient mqttClient(wifiClient);
 
-static unsigned long lastReconnectAttempt = 0;
+// --------------------------------------------------
+// INTERNALS
+// --------------------------------------------------
 
-/******************************************************************************
- * INTERNALS
- *****************************************************************************/
-static bool mqttReconnect() {
-#ifdef DEBUG_SERIAL
-  Serial.print("Attempting MQTT connection...");
-#endif
+static void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("[MQTT] Message arrived: ");
+  Serial.println(topic);
 
-  // Client ID (must be unique per device)
-  const char* clientId = "lego_city_controller";
+  // Optional: print payload
+  if (length > 0) {
+    Serial.print("[MQTT] Payload: ");
+    for (unsigned int i = 0; i < length; i++) {
+      Serial.print((char)payload[i]);
+    }
+    Serial.println();
+  }
 
-  bool connected = mqttClient.connect(
-    clientId,
-    MQTT_USER,
-    MQTT_PASSWORD,
-    "lego_city/status/online", // LWT topic
-    0,                         // QoS
-    true,                      // retained
-    "false"                    // LWT payload
-  );
+  // ------------------------------------------------
+  // TEST COMMAND
+  // ------------------------------------------------
+  if (strcmp(topic, "lego_city/cmd/test") == 0) {
+    Serial.println("[MQTT] Enabling LED test pattern");
+    enableTestPattern(true);
+    return;
+  }
+}
 
-  if (connected) {
-#ifdef DEBUG_SERIAL
-    Serial.println("connected");
-#endif
+// --------------------------------------------------
+// CONNECT
+// --------------------------------------------------
 
-    // Subscribe to all commands
-    mqttClient.subscribe("lego_city/cmd/#");
-
-    // Announce online (retained)
-    mqttClient.publish("lego_city/status/online", "true", true);
+static bool mqttConnect() {
+  if (mqttClient.connected()) {
     return true;
   }
 
-#ifdef DEBUG_SERIAL
-  Serial.print("failed, rc=");
-  Serial.println(mqttClient.state());
-#endif
-  return false;
-}
+  Serial.print("[MQTT] Connecting to broker... ");
 
-static void onMqttMessage(char* topic, byte* payload, unsigned int length) {
-#ifdef DEBUG_SERIAL
-  Serial.println("[MQTT] Message received");
-  Serial.print("  Topic: ");
-  Serial.println(topic);
+  bool connected;
 
-  Serial.print("  Payload: ");
-  for (unsigned int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
+  if (strlen(MQTT_USERNAME) > 0) {
+    connected = mqttClient.connect(
+      MQTT_CLIENT_ID,
+      MQTT_USERNAME,
+      MQTT_PASSWORD
+    );
+  } else {
+    connected = mqttClient.connect(MQTT_CLIENT_ID);
   }
-  Serial.println();
-#endif
+
+  if (!connected) {
+    Serial.print("FAILED (rc=");
+    Serial.print(mqttClient.state());
+    Serial.println(")");
+    return false;
+  }
+
+  Serial.println("CONNECTED");
+
+  // ------------------------------------------------
+  // SUBSCRIPTIONS
+  // ------------------------------------------------
+
+  mqttClient.subscribe("lego_city/cmd/test");
+  Serial.println("[MQTT] Subscribed to lego_city/cmd/test");
+
+  return true;
 }
 
+// --------------------------------------------------
+// PUBLIC API
+// --------------------------------------------------
 
-/******************************************************************************
- * PUBLIC API
- *****************************************************************************/
 void initMQTT() {
-  mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
-  mqttClient.setCallback(onMqttMessage);
+  mqttClient.setServer(MQTT_HOST, MQTT_PORT);
+  mqttClient.setCallback(mqttCallback);
 }
-
 
 void mqttLoop() {
-  if (!wifiIsConnected()) return;
-
   if (!mqttClient.connected()) {
-    unsigned long now = millis();
-    if (now - lastReconnectAttempt > 5000) {
-      lastReconnectAttempt = now;
-      mqttReconnect();
-    }
-    return;
+    mqttConnect();
   }
-
   mqttClient.loop();
 }
 
-void mqttPublish(const char* topic, const char* payload) {
-  if (!mqttClient.connected()) return;
-  mqttClient.publish(topic, payload, true);
+bool mqttIsConnected() {
+  return mqttClient.connected();
 }
