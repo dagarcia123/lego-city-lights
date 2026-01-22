@@ -62,7 +62,8 @@ void initLedManager(uint16_t total_leds) {
 static CRGB colorForZone(ZoneType zone) {
   switch (zone) {
     case ZONE_STREET:
-      return CRGB(255, 200, 150);
+      // return CRGB(255, 200, 150);
+      return CRGB::Yellow;
     case ZONE_INTERIOR:
       return CRGB(255, 180, 110);
     case ZONE_SIGNAGE:
@@ -73,6 +74,19 @@ static CRGB colorForZone(ZoneType zone) {
       return CRGB::Black;
   }
 }
+// ----------------------------------------------------------
+// HELPER FUNCTIONS
+// ----------------------------------------------------------
+static uint8_t twinklePhase = 0;
+
+
+static uint8_t twinkleBrightness(uint8_t base, uint16_t index) {
+  // simple wave offset per LED
+  uint8_t phase = twinklePhase + (index * 17);
+  uint8_t wave = sin8(phase);          // 0–255
+  uint8_t delta = scale8(wave, 40);    // max +/- ~40
+  return qadd8(base - 20, delta);       // clamp-safe
+}
 
 // ----------------------------------------------------------
 // RENDER LOOP
@@ -81,43 +95,61 @@ static CRGB colorForZone(ZoneType zone) {
 void renderCity() {
   if (!leds || ledCount == 0) return;
 
+  // ----------------------------------------------------------
+  // TEST MODE OVERRIDE
+  // ----------------------------------------------------------
   if (testModeEnabled) {
     renderTestPattern();
     return;
   }
 
-  uint16_t buildingCount = getBuildingInstanceCount();
+  else {
+    uint16_t buildingCount = getBuildingInstanceCount();
 
-  for (uint16_t b = 0; b < buildingCount; b++) {
-    const BuildingInstance* inst = getBuildingInstance(b);
-    const BuildingDef* def = inst->def;
+    for (uint16_t b = 0; b < buildingCount; b++) {
+      const BuildingInstance* inst = getBuildingInstance(b);
+      const BuildingDef* def = inst->def;
 
-    for (uint16_t i = 0; i < def->led_count; i++) {
-      uint16_t globalIndex = inst->led_offset + i;
+      for (uint16_t i = 0; i < def->led_count; i++) {
+        uint16_t globalIndex = inst->led_offset + i;
+        if (globalIndex >= ledCount) continue;
 
-      if (globalIndex >= ledCount) continue;
+        const LedDef& led = def->leds[i];
 
-      leds[globalIndex] = colorForZone(def->leds[i].zone);
+        // Base color by zone
+        CRGB color = colorForZone(led.zone);
+
+        // ------------------------------------------------------
+        // AMBIENT TWINKLE EFFECT
+        // ------------------------------------------------------
+        if ((led.flags & ZF_AMBIENT) && led.zone == ZONE_INTERIOR) {
+          uint8_t phase = twinklePhase + (globalIndex * 17);
+          uint8_t wave  = sin8(phase);          // 0–255
+          uint8_t delta = scale8(wave, 40);     // max ±40
+          uint8_t b     = qadd8(LED_BRIGHTNESS - 20, delta);
+          color.nscale8_video(b);
+        }
+
+        leds[globalIndex] = color;
+      }
     }
-  }
 
-  FastLED.show();
+    // Advance twinkle animation
+    twinklePhase++;
+
+    FastLED.show();
+  }
 }
+
 
 // ----------------------------------------------------------
 // TEST PATTERN
 // ----------------------------------------------------------
 
 static void renderTestPattern() {
-  if (!leds || ledCount < 10) return;
-
-  CRGB colors[3] = { CRGB::Red, CRGB::Green, CRGB::Blue };
-
-  for (uint8_t i = 0; i < 10; i++) {
-    leds[i] = colors[(i + testFrame) % 3];
+  for (uint16_t i = 0; i < ledCount; i++) {
+    leds[i] = CRGB::White;
   }
-
-  testFrame++;
   FastLED.show();
 }
 

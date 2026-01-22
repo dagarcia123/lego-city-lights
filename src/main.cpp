@@ -1,90 +1,77 @@
 #include <Arduino.h>
 
 #include "config.h"
-
 #include "wifi_manager.h"
 #include "mqtt.h"
 #include "ota.h"
-
 #include "city_layout.h"
 #include "led_manager.h"
-
 #include "scene_manager.h"
 #include "season_manager.h"
-
-// --------------------------------------------------
-// SETUP
-// --------------------------------------------------
 
 void setup() {
 #ifdef DEBUG_SERIAL
   Serial.begin(115200);
   delay(500);
-  Serial.println();
-  Serial.println("=== LEGO CITY CONTROLLER BOOT ===");
+  Serial.println("\n[LegoCity] Booting...");
 #endif
 
-  // ------------------------------------------------
-  // WiFi / MQTT / OTA
-  // ------------------------------------------------
+  // -----------------------------
+  // Core services
+  // -----------------------------
   initWiFi();
   initMQTT();
   initOTA();
 
-  // ------------------------------------------------
-  // Scene / Season
-  // ------------------------------------------------
   initScenes();
   initSeasons();
 
-  // ------------------------------------------------
-  // City layout (TEMP: static for now)
-  // ------------------------------------------------
-  const char* layoutJson = R"json(
-  {
-    "buildings": [
-      "BOOKSTORE",
-      "FIRE_STATION",
-      "FRENCH_BISTRO",
-      "MOVIE_THEATER",
-      "TOWN_HALL"
-    ]
-  }
-  )json";
+  // -----------------------------
+  // Temporary city layout (TEST)
+  // -----------------------------
+  const char* testLayout =
+    "{ \"buildings\": [ \"MOVIE_THEATER\" ] }";
 
-  bool ok = setCityLayoutFromJson(String(layoutJson));
-
+  if (!setCityLayoutFromJson(testLayout)) {
 #ifdef DEBUG_SERIAL
-  Serial.print("[MAIN] City layout load: ");
-  Serial.println(ok ? "OK" : "FAILED");
-  Serial.print("[MAIN] Total LEDs: ");
-  Serial.println(getTotalLedCount());
+    Serial.println("[Layout] Failed to load test layout");
 #endif
+  }
 
-  // ------------------------------------------------
-  // LED INIT (AFTER layout!)
-  // ------------------------------------------------
+  // -----------------------------
+  // LED system
+  // -----------------------------
   initLedManager(getTotalLedCount());
 
 #ifdef DEBUG_SERIAL
-  Serial.println("=== SETUP COMPLETE ===");
+  Serial.println("[LegoCity] Setup complete");
 #endif
 }
 
-// --------------------------------------------------
-// LOOP
-// --------------------------------------------------
-
 void loop() {
-  mqttLoop();
-  otaLoop();
+  // -----------------------------
+  // Background services
+  // -----------------------------
+  if (wifiIsConnected()) {
+    mqttLoop();
+    otaLoop();
+  }
 
+  // -----------------------------
+  // Scene & season logic
+  // -----------------------------
   updateScenes();
   applySeason();
 
+  // -----------------------------
+  // LED rendering (THIS IS REQUIRED)
+  // -----------------------------
   renderCity();
 
-#if LOOP_DELAY_MS > 0
-  delay(LOOP_DELAY_MS);
-#endif
+  // -----------------------------
+  // Yield (non-blocking)
+  // -----------------------------
+  if (LOOP_DELAY_MS > 0) {
+    delay(LOOP_DELAY_MS);
+  }
 }

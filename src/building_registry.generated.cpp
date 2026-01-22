@@ -6,18 +6,10 @@
 // Source: Building_Data_Model.xlsx
 // ----------------------------------------------------------
 
-extern const BuildingDef BOOKSTORE_DEF;
-extern const BuildingDef FIRE_STATION_DEF;
-extern const BuildingDef FRENCH_BISTRO_DEF;
-extern const BuildingDef MOVIE_THEATER_DEF;
-extern const BuildingDef TOWN_HALL_DEF;
+extern const BuildingDef MOVIE_THEATER_DEF;
 
 static const BuildingDef* ALL_BUILDINGS[] = {
-  &BOOKSTORE_DEF,
-  &FIRE_STATION_DEF,
-  &FRENCH_BISTRO_DEF,
-  &MOVIE_THEATER_DEF,
-  &TOWN_HALL_DEF,
+  &MOVIE_THEATER_DEF,
 };
 
 static const uint16_t BUILDING_COUNT =
